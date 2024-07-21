@@ -45,10 +45,10 @@ async fn main() {
     let requirements = tokio::spawn(async move {
         RequirementsTxt::parse(
             &args.requirement,
-            std::env::current_dir().unwrap(),
+            std::env::current_dir().expect("Error occurred while getting current directory"),
             &BaseClientBuilder::new())
             .await
-            .unwrap()
+            .expect("Error occurred while parsing provided requirements")
     })
         .await
         .unwrap();
