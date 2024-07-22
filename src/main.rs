@@ -75,16 +75,26 @@ async fn main() {
     let mut reports = Vulnerabilities { vulnerabilities: vec![] };
 
     for job in jobs {
-        let report = job.await.unwrap().unwrap();
-        match report {
-            VulnerabilityReport::Vulnerable { vulnerabilities, .. } => {
-                reports.vulnerabilities.extend(vulnerabilities.vulnerabilities)
+        let job_result = job.await;
+        match job_result {
+            Ok(report_result) => {
+                match report_result {
+                    Ok(report) => {
+                        match report {
+                            VulnerabilityReport::Vulnerable { vulnerabilities, .. } => {
+                                reports.vulnerabilities.extend(vulnerabilities.vulnerabilities)
+                            }
+                            _ => ()
+                        }
+                    }
+                    Err(e) => { eprintln!("Error `{}` occurred while checking vulnerability on remote server", e) }
+                }
             }
-            _ => ()
+            Err(e) => { eprintln!("Error `{}` occurred in async task", e) }
         }
     }
 
-    let serialized = serde_json::to_string(&reports).unwrap();
+    let serialized = serde_json::to_string(&reports).expect("Cannot serialize generated report into `json`");
 
-    write!(output, "{}", &serialized).unwrap();
+    writeln!(output, "{}", &serialized).unwrap();
 }
