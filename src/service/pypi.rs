@@ -27,7 +27,7 @@ impl VulnerabilityService for PyPi {
                 if response.status().as_u16() == 200 {
                     let parsed_response = response.json::<Vulnerabilities>().await?;
                     if parsed_response.vulnerabilities.len() > 0 {
-                        Ok(VulnerabilityReport::Vulnerable { name, version, vulnerabilities: parsed_response })
+                        Ok(VulnerabilityReport::Vulnerable { name, version, vulnerabilities: parsed_response.vulnerabilities })
                     } else {
                         Ok(VulnerabilityReport::NotVulnerable)
                     }

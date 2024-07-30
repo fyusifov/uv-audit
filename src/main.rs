@@ -1,33 +1,29 @@
 mod cli;
 mod service;
-mod format;
+mod formatters;
 mod models;
 mod extractor;
 
-use tokio::sync::Semaphore;
+use std::{fs::File, io::{self, Write}, sync::Arc, process::{self}};
 
+use tokio::sync::Semaphore;
 use clap::Parser;
 use requirements_txt::{RequirementsTxt};
 use uv_client::BaseClientBuilder;
 use reqwest;
 
-use service::interface::VulnerabilityService;
-use crate::cli::ServiceSelector;
+use crate::service::interface::VulnerabilityService;
+use crate::cli::{OutputFormatSelector, ServiceSelector};
 use crate::extractor::Dependency;
-use crate::models::{Vulnerabilities, VulnerabilityReport};
 use crate::service::{pypi};
-
-use std::{
-    fs::File,
-    io::{self, Write},
-    sync::Arc,
-    process::{self},
-};
+use crate::formatters::{format_cyclonedx, format_json, format_table};
 
 
 #[tokio::main]
 async fn main() {
     let args = cli::Config::parse();
+
+    cli::validate_config(&args);
 
     let service = match args.service {
         ServiceSelector::Osv => {
@@ -37,7 +33,7 @@ async fn main() {
         ServiceSelector::Pypi => pypi::PyPi
     };
 
-    let mut output: Box<dyn Write> = match args.output {
+    let output: Box<dyn Write> = match args.output {
         Some(file) => Box::new(File::create(file).unwrap()),
         _ => Box::new(io::stdout()),
     };
@@ -72,21 +68,14 @@ async fn main() {
         jobs.push(job);
     }
 
-    let mut reports = Vulnerabilities { vulnerabilities: vec![] };
+    let mut reports = vec![];
 
     for job in jobs {
         let job_result = job.await;
         match job_result {
             Ok(report_result) => {
                 match report_result {
-                    Ok(report) => {
-                        match report {
-                            VulnerabilityReport::Vulnerable { vulnerabilities, .. } => {
-                                reports.vulnerabilities.extend(vulnerabilities.vulnerabilities)
-                            }
-                            _ => ()
-                        }
-                    }
+                    Ok(report) => { reports.push(report) }
                     Err(e) => { eprintln!("Error `{}` occurred while checking vulnerability on remote server", e) }
                 }
             }
@@ -94,7 +83,9 @@ async fn main() {
         }
     }
 
-    let serialized = serde_json::to_string(&reports).expect("Cannot serialize generated report into `json`");
-
-    writeln!(output, "{}", &serialized).unwrap();
+    match args.format {
+        OutputFormatSelector::Columns => format_table(&reports),
+        OutputFormatSelector::Json => format_json(&reports, output),
+        OutputFormatSelector::CyclonedxJson => format_cyclonedx(&reports, output)
+    }
 }
