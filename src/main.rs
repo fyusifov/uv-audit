@@ -16,7 +16,7 @@ use crate::service::interface::VulnerabilityService;
 use crate::cli::{OutputFormatSelector, ServiceSelector};
 use crate::extractor::Dependency;
 use crate::service::{pypi};
-use crate::formatters::{format_json, format_table};
+use crate::formatters::{format_cyclonedx, format_json, format_table};
 
 
 #[tokio::main]
@@ -33,7 +33,7 @@ async fn main() {
         ServiceSelector::Pypi => pypi::PyPi
     };
 
-    let mut output: Box<dyn Write> = match args.output {
+    let output: Box<dyn Write> = match args.output {
         Some(file) => Box::new(File::create(file).unwrap()),
         _ => Box::new(io::stdout()),
     };
@@ -86,6 +86,6 @@ async fn main() {
     match args.format {
         OutputFormatSelector::Columns => format_table(&reports),
         OutputFormatSelector::Json => format_json(&reports, output),
-        OutputFormatSelector::CyclonedxJson => todo!()
+        OutputFormatSelector::CyclonedxJson => format_cyclonedx(&reports, output)
     }
 }

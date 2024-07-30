@@ -6,7 +6,7 @@ pub struct Vulnerability {
     aliases: Vec<String>,
     pub fixed_in: Vec<String>,
     #[serde(rename(serialize = "description"))]
-    details: String,
+    pub details: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
