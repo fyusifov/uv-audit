@@ -29,3 +29,29 @@ impl Dependency {
         }
     }
 }
+
+#[tokio::test]
+async fn test_extractor() {
+    use std::{path, env};
+    use uv_client::BaseClientBuilder;
+    use requirements_txt::{RequirementsTxt};
+
+    let requirements_file = path::Path::new("./test-data/requirements.txt");
+    let parsed_requirements = RequirementsTxt::parse(
+        requirements_file,
+        env::current_dir().unwrap(),
+        &BaseClientBuilder::new(),
+    ).
+        await.
+        unwrap();
+
+    let mut dependencies = vec![];
+
+    for requirement in &parsed_requirements.requirements {
+        dependencies.push(Dependency::from_requirement_entry(requirement));
+    }
+
+    assert_eq!(dependencies[0], Dependency::Resolved { name: "named-requirement-with-version".to_string(), version: "1.2.3".to_string() });
+    assert_eq!(dependencies[1], Dependency::Unresolved { name: "named-requirement-without-version".to_string(), url: "git+https://github.com/somerepo.git".to_string() });
+    assert_eq!(dependencies[2], Dependency::Unknown { identifier: "https://github.com/somerepo.git".to_string() });
+}
