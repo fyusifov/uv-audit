@@ -17,22 +17,17 @@ pub enum OutputFormatSelector {
     /// Format output as a json
     Json,
     /// Format output as CycloneDX json
-    CyclonedxJson
+    CyclonedxJson,
 }
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub struct Config {
-    #[arg(short, long, help("Audit the given requirements file"))]
-    pub requirement: path::PathBuf,
+    #[arg(short, long, help("Audit the given requirements file"), conflicts_with = "project_path")]
+    pub requirement: Option<String>,
 
-    #[arg(
-        short,
-        long,
-        default_value("pypi"),
-        help("Vulnerability service to audit dependencies against")
-    )]
-    pub service: ServiceSelector,
+    #[arg(short, long, help("Audit Python project at the given path (only `pyproject.toml`)"))]
+    pub project_path: Option<String>,
 
     #[arg(
         short,
@@ -41,6 +36,14 @@ pub struct Config {
         help("Format to emit audit results in")
     )]
     pub format: OutputFormatSelector,
+
+    #[arg(
+        short,
+        long,
+        default_value("pypi"),
+        help("Vulnerability service to audit dependencies against")
+    )]
+    pub service: ServiceSelector,
 
     #[arg(
         short,
@@ -55,6 +58,35 @@ pub struct Config {
 
     #[arg(short, long, help("Output results to the given file [default: stdout]"))]
     pub output: Option<path::PathBuf>,
+
+    #[arg(
+        short,
+        long,
+        help("Base URL of the Python Package Index; this should point to a repository compliant with PEP 503 (the simple repository API)"
+        )
+    )]
+    pub index_url: Option<String>,
+
+    #[arg(
+        short,
+        long,
+        help("Extra URLs of package indexes to use in addition to `--index-url`; should follow the same rules as `--index-url`"
+        )
+    )]
+    pub extra_index_url: Option<Vec<String>>,
+
+    #[arg(long, help("Don't audit packages that are marked as editable"))]
+    pub exclude_editable: bool,
+
+    #[arg(long, help("Don't perform any dependency resolution"))]
+    pub no_deps: bool,
+
+    #[arg(
+        long,
+        help("Don't use `pip` for dependency resolution; this can only be used with hashed requirements files or if the `--no-deps` flag has been provided"
+        )
+    )]
+    pub disable_pip: bool,
 }
 
 
