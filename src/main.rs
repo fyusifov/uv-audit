@@ -2,35 +2,42 @@ mod cli;
 mod service;
 mod formatters;
 mod models;
-mod extractor;
+mod auditor;
+mod uv_cli;
 
-use std::{fs::File, io::{self, Write}, sync::Arc, process::{self}};
+use std::{fs::File, io::{self, Write}, process::{self}};
 
-use tokio::sync::Semaphore;
 use clap::Parser;
-use requirements_txt::{RequirementsTxt};
-use uv_client::BaseClientBuilder;
-use reqwest;
 
-use crate::service::interface::VulnerabilityService;
+use crate::auditor::Auditor;
 use crate::cli::{OutputFormatSelector, ServiceSelector};
-use crate::extractor::Dependency;
-use crate::service::{pypi};
-use crate::formatters::{format_cyclonedx, format_json, format_table};
+use crate::service::pypi::PyPi;
+use crate::formatters::{format_table, format_cyclonedx, format_json};
+use crate::uv_cli::{UVArgs, UV};
 
 
 #[tokio::main]
 async fn main() {
     let args = cli::Config::parse();
-
     cli::validate_config(&args);
+
+    let uv = UV::new();
+    let dependencies = {
+        if args.requirement.is_some() {
+            uv.run(UVArgs::Compile { filename: args.requirement.unwrap(), all_extras: false, index_url: args.index_url, extra_index_url: args.extra_index_url })
+        } else if args.project_path.is_some() {
+            uv.run(UVArgs::Compile { filename: args.project_path.unwrap(), all_extras: true, index_url: args.index_url, extra_index_url: args.extra_index_url })
+        } else {
+            uv.run(UVArgs::Freeze)
+        }
+    };
 
     let service = match args.service {
         ServiceSelector::Osv => {
             eprintln!("OSV Service is not implemented");
             process::exit(1)
         }
-        ServiceSelector::Pypi => pypi::PyPi
+        ServiceSelector::Pypi => PyPi::new(args.timeout, args.connections)
     };
 
     let output: Box<dyn Write> = match args.output {
@@ -38,50 +45,8 @@ async fn main() {
         _ => Box::new(io::stdout()),
     };
 
-    let requirements = tokio::spawn(async move {
-        RequirementsTxt::parse(
-            &args.requirement,
-            std::env::current_dir().expect("Error occurred while getting current directory"),
-            &BaseClientBuilder::new())
-            .await
-            .expect("Error occurred while parsing provided requirements")
-    })
-        .await
-        .unwrap();
-
-    let mut dependencies = vec![];
-    let client = reqwest::Client::new();
-    let semaphore = Arc::new(Semaphore::new(args.connections));
-    let mut jobs = vec![];
-
-    for requirement in &requirements.requirements {
-        dependencies.push(Dependency::from_requirement_entry(requirement));
-    }
-
-    for dependency in dependencies {
-        let service_copy = service.clone();
-        let client_copy = client.clone();
-        let semaphore_copy = semaphore.clone();
-        let job = tokio::spawn(
-            async move { service_copy.query(dependency, client_copy, semaphore_copy).await }
-        );
-        jobs.push(job);
-    }
-
-    let mut reports = vec![];
-
-    for job in jobs {
-        let job_result = job.await;
-        match job_result {
-            Ok(report_result) => {
-                match report_result {
-                    Ok(report) => { reports.push(report) }
-                    Err(e) => { eprintln!("Error `{}` occurred while checking vulnerability on remote server", e) }
-                }
-            }
-            Err(e) => { eprintln!("Error `{}` occurred in async task", e) }
-        }
-    }
+    let auditor = Auditor::from_service(service);
+    let reports = auditor.audit(dependencies.unwrap()).await.unwrap();
 
     match args.format {
         OutputFormatSelector::Columns => format_table(&reports),

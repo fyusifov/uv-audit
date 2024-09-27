@@ -4,14 +4,23 @@ use reqwest;
 use anyhow::Result;
 use tokio::sync::Semaphore;
 use crate::models::{VulnerabilityReport, Vulnerabilities};
-use crate::extractor::Dependency;
+use crate::uv_cli::Dependency;
 use crate::service::interface::VulnerabilityService;
 
 
 const BASE_URL: &str = "https://pypi.org/pypi";
 
 #[derive(Debug, PartialEq, Copy, Clone)]
-pub struct PyPi;
+pub struct PyPi {
+    timeout: u8,
+    connections: usize,
+}
+
+impl PyPi {
+    pub fn new(timeout: u8, connections: usize) -> Self {
+        Self { timeout, connections }
+    }
+}
 
 impl VulnerabilityService for PyPi {
     async fn query(&self, dependency: Dependency, client: reqwest::Client, semaphore: Arc<Semaphore>) -> Result<VulnerabilityReport>
@@ -35,8 +44,15 @@ impl VulnerabilityService for PyPi {
                     Ok(VulnerabilityReport::Skipped { name, reason: "Dependency was not found on PyPi and cannot be audited".to_string() })
                 }
             }
-            Dependency::Unresolved { name, .. } => Ok(VulnerabilityReport::Skipped { name, reason: "Dependency is missing version specifier and cannot be audited".to_string() }),
-            Dependency::Unknown { identifier } => Ok(VulnerabilityReport::Skipped { name: identifier, reason: "Unknown dependency cannot be audited".to_string() })
+            Dependency::Unresolved { identifier } => Ok(VulnerabilityReport::Skipped { name: identifier, reason: "Unresolved dependency cannot be audited".to_string() })
         }
+    }
+
+    fn get_timeout(&self) -> u8 {
+        self.timeout
+    }
+
+    fn get_connection_limit(&self) -> usize {
+        self.connections
     }
 }
