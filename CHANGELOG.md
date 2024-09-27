@@ -32,6 +32,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial version
 
-[1.0.0]: https://github.com/fyusifov/uv-audit/pull/4
+[1.0.0]: https://github.com/fyusifov/uv-audit/pull/7
 [0.2.0]: https://github.com/fyusifov/uv-audit/pull/3
 [0.1.0]: https://github.com/fyusifov/uv-audit/tree/0.1.0
