@@ -51,7 +51,7 @@ pub struct Config {
         default_value("5"),
         help("Set the socket timeout")
     )]
-    pub timeout: u8,
+    pub timeout: u64,
 
     #[arg(short, long, default_value("20"), help("Set the number of concurrent connections"))]
     pub connections: usize,
@@ -78,15 +78,8 @@ pub struct Config {
     #[arg(long, help("Don't audit packages that are marked as editable"))]
     pub exclude_editable: bool,
 
-    #[arg(long, help("Don't perform any dependency resolution"))]
+    #[arg(long, help("Don't perform any dependency resolution"), requires = "requirement")]
     pub no_deps: bool,
-
-    #[arg(
-        long,
-        help("Don't use `pip` for dependency resolution; this can only be used with hashed requirements files or if the `--no-deps` flag has been provided"
-        )
-    )]
-    pub disable_pip: bool,
 }
 
 impl Config {

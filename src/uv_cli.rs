@@ -1,4 +1,6 @@
-use std::process::{Command, Output};
+use std::process::Command;
+use std::fs::File;
+use std::io::Read;
 
 use anyhow::{Result, anyhow};
 
@@ -10,7 +12,7 @@ pub enum Dependency {
 
 pub enum UVArgs {
     Freeze,
-    Compile { filename: String, all_extras: bool, index_url: Option<String>, extra_index_url: Option<Vec<String>> },
+    Compile { filename: String, all_extras: bool, index_url: Option<String> },
 }
 
 pub struct UV;
@@ -20,7 +22,7 @@ impl UV {
         Self
     }
 
-    pub fn run(self, args: UVArgs) -> Result<Vec<Dependency>> {
+    pub fn run(&self, args: UVArgs) -> Result<Vec<Dependency>> {
         let mut command = Command::new("uv");
         command.arg("pip");
         match args {
@@ -39,15 +41,22 @@ impl UV {
         }
         let output = command.output()?;
         if output.status.success() {
-            Ok(self.parse(&output))
+            Ok(self.parse(&output.stdout))
         } else {
             let error = String::from_utf8_lossy(&output.stderr);
             Err(anyhow!("Resolving dependencies failed: {:?}", error))
         }
     }
 
-    fn parse(self, output: &Output) -> Vec<Dependency> {
-        let stdout = String::from_utf8_lossy(&output.stdout);
+    pub fn read_requirements(&self, filename: String) -> Result<Vec<Dependency>> {
+        let mut content = vec![];
+        let mut file = File::open(filename)?;
+        file.read_to_end(&mut content)?;
+        Ok(self.parse(&content))
+    }
+
+    fn parse(&self, output: &Vec<u8>) -> Vec<Dependency> {
+        let stdout = String::from_utf8_lossy(&output);
         let mut dependencies = vec![];
         for line in stdout.lines() {
             if !line.contains("#") {
