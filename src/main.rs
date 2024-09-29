@@ -6,7 +6,6 @@ mod auditor;
 mod uv_cli;
 
 use std::{fs::File, io::{self, Write}, process::{self}};
-
 use clap::Parser;
 
 use crate::auditor::Auditor;
@@ -23,10 +22,16 @@ async fn main() {
 
     let uv = UV::new();
     let dependencies = {
-        if args.requirement.is_some() {
-            uv.run(UVArgs::Compile { filename: args.requirement.unwrap(), all_extras: false, index_url: args.index_url, extra_index_url: args.extra_index_url })
+        if args.no_deps {
+            uv.read_requirements(args.requirement.unwrap())
         } else if args.project_path.is_some() {
-            uv.run(UVArgs::Compile { filename: args.project_path.unwrap(), all_extras: true, index_url: args.index_url, extra_index_url: args.extra_index_url })
+            uv.run(UVArgs::Compile { filename: args.project_path.unwrap(), all_extras: true, index_url: args.index_url })
+        } else if args.requirement.is_some() {
+            uv.run(UVArgs::Compile {
+                filename: args.requirement.unwrap(),
+                all_extras: false,
+                index_url: args.index_url,
+            })
         } else {
             uv.run(UVArgs::Freeze)
         }

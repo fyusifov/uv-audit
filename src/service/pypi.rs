@@ -12,12 +12,12 @@ const BASE_URL: &str = "https://pypi.org/pypi";
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct PyPi {
-    timeout: u8,
+    timeout: u64,
     connections: usize,
 }
 
 impl PyPi {
-    pub fn new(timeout: u8, connections: usize) -> Self {
+    pub fn new(timeout: u64, connections: usize) -> Self {
         Self { timeout, connections }
     }
 }
@@ -48,7 +48,7 @@ impl VulnerabilityService for PyPi {
         }
     }
 
-    fn get_timeout(&self) -> u8 {
+    fn get_timeout(&self) -> u64 {
         self.timeout
     }
 

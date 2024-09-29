@@ -1,6 +1,8 @@
+use core::time::Duration;
 use std::sync::Arc;
 
 use anyhow::Result;
+use reqwest::ClientBuilder;
 use tokio::sync::Semaphore;
 
 use crate::uv_cli::Dependency;
@@ -8,7 +10,7 @@ use crate::models::VulnerabilityReport;
 use crate::service::interface::VulnerabilityService;
 
 pub struct Auditor<T: VulnerabilityService + Clone + Send + Sync + 'static> {
-    service: T
+    service: T,
 }
 
 impl<T: VulnerabilityService + Clone + Send + Sync + 'static> Auditor<T> {
@@ -16,8 +18,9 @@ impl<T: VulnerabilityService + Clone + Send + Sync + 'static> Auditor<T> {
         Self { service }
     }
 
-    pub async fn audit(&self, dependencies: Vec<Dependency>) -> Result<Vec<VulnerabilityReport>>{
-        let client = reqwest::Client::new();
+    pub async fn audit(&self, dependencies: Vec<Dependency>) -> Result<Vec<VulnerabilityReport>> {
+        let duration = Duration::from_secs(self.service.get_timeout());
+        let client = ClientBuilder::new().timeout(duration).build()?;
         let semaphore = Arc::new(Semaphore::new(self.service.get_connection_limit()));
         let mut jobs = vec![];
 
