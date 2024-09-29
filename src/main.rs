@@ -19,7 +19,7 @@ use crate::uv_cli::{UVArgs, UV};
 #[tokio::main]
 async fn main() {
     let args = cli::Config::parse();
-    cli::validate_config(&args);
+    args.validate_config();
 
     let uv = UV::new();
     let dependencies = {

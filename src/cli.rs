@@ -89,30 +89,31 @@ pub struct Config {
     pub disable_pip: bool,
 }
 
-
-/// This function is used to validate command-line interface (CLI) arguments.
-/// For error printing, it avoids using third-party crates by utilizing custom
-/// terminal coloring with ANSI escape sequences. The sequences used are as follows:
-///
-/// - `\x1b[1m`: Makes the text **bold**.
-/// - `\x1b[91m`: Colors the text **red** to indicate an error or failure.
-/// - `\x1b[93m`: Colors the text **yellow** to indicate a warning.
-/// - `\x1b[0m`: Resets the text formatting to default.
-///
-/// Example usage:
-///
-/// ```rust
-/// println!("\x1b[1mThis is bold text\x1b[0m");
-/// println!("\x1b[91mThis is red text (error)\x1b[0m");
-/// println!("\x1b[93mThis is yellow text (warning)\x1b[0m");
-/// ```
-///
-/// This approach provides basic but effective text formatting without additional dependencies.
-pub fn validate_config(config: &Config) {
-    if config.format == OutputFormatSelector::Columns {
-        if config.output.is_some() {
-            eprintln!("\x1b[1m\x1b[91merror:\x1b[0m the argument \x1b[93m'--format'\x1b[0m with value \x1b[93m'columns'\x1b[0m cannot be used with \x1b[93m'--output <OUTPUT>'\x1b[0m");
-            process::exit(1)
+impl Config {
+    /// This function is used to validate command-line interface (CLI) arguments.
+    /// For error printing, it avoids using third-party crates by utilizing custom
+    /// terminal coloring with ANSI escape sequences. The sequences used are as follows:
+    ///
+    /// - `\x1b[1m`: Makes the text **bold**.
+    /// - `\x1b[91m`: Colors the text **red** to indicate an error or failure.
+    /// - `\x1b[93m`: Colors the text **yellow** to indicate a warning.
+    /// - `\x1b[0m`: Resets the text formatting to default.
+    ///
+    /// Example usage:
+    ///
+    /// ```rust
+    /// println!("\x1b[1mThis is bold text\x1b[0m");
+    /// println!("\x1b[91mThis is red text (error)\x1b[0m");
+    /// println!("\x1b[93mThis is yellow text (warning)\x1b[0m");
+    /// ```
+    ///
+    /// This approach provides basic but effective text formatting without additional dependencies.
+    pub fn validate_config(&self) {
+        if self.format == OutputFormatSelector::Columns {
+            if self.output.is_some() {
+                eprintln!("\x1b[1m\x1b[91merror:\x1b[0m the argument \x1b[93m'--format'\x1b[0m with value \x1b[93m'columns'\x1b[0m cannot be used with \x1b[93m'--output <OUTPUT>'\x1b[0m");
+                process::exit(1)
+            }
         }
     }
 }
