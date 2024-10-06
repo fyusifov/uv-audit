@@ -25,7 +25,7 @@ impl<T: VulnerabilityService + Clone + Send + Sync + 'static> Auditor<T> {
         let client = ClientBuilder::new().timeout(duration).build()?;
         let semaphore = Arc::new(Semaphore::new(self.service.get_connection_limit()));
         let mut jobs = vec![];
-        let pb = self.get_progress_bar(dependencies.len() as u64)?;
+        let pb = self.get_progress_bar(dependencies.len() as u64);
 
         for dependency in dependencies {
             let pb_copy = pb.clone();
@@ -62,12 +62,13 @@ impl<T: VulnerabilityService + Clone + Send + Sync + 'static> Auditor<T> {
         reports
     }
 
-    fn get_progress_bar(&self, dependencies_length: u64) -> Result<ProgressBar> {
+    fn get_progress_bar(&self, dependencies_length: u64) -> ProgressBar {
         let sty = ProgressStyle::with_template(
-            "[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")?
+            "[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
+            .unwrap()
             .progress_chars("##-");
         let pb = ProgressBar::new(dependencies_length);
         pb.set_style(sty);
-        Ok(pb)
+        pb
     }
 }

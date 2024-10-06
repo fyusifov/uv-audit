@@ -42,7 +42,7 @@ impl UV {
                 }
             }
         }
-        let pb = self.get_progress_bar()?;
+        let pb = self.get_progress_bar();
         pb.set_message("Resolving Dependencies...");
         let output = command.output()?;
         pb.finish_with_message("Done");
@@ -83,11 +83,12 @@ impl UV {
         dependencies
     }
 
-    fn get_progress_bar(&self) -> Result<ProgressBar> {
+    fn get_progress_bar(&self) -> ProgressBar {
         let pb = ProgressBar::new_spinner();
         pb.enable_steady_tick(Duration::from_millis(120));
         pb.set_style(
-            ProgressStyle::with_template("{spinner:.yellow} {msg}")?
+            ProgressStyle::with_template("{spinner:.yellow} {msg}")
+                .unwrap()
                 .tick_strings(&[
                     "▹▹▹▹▹",
                     "▸▹▹▹▹",
@@ -98,6 +99,6 @@ impl UV {
                     "▪▪▪▪▪",
                 ]),
         );
-        Ok(pb)
+        pb
     }
 }
