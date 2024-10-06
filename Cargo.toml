@@ -3,6 +3,7 @@ name = "uv-audit"
 version = "1.2.0"
 edition = "2021"
 authors = ["Farid Yusifov"]
+license = "MIT"
 
 [dependencies]
 clap = { version = "4.5.7", features = ["derive"] }
