@@ -1,8 +1,11 @@
 use std::process::Command;
 use std::fs::File;
 use std::io::Read;
+use std::time::Duration;
 
 use anyhow::{Result, anyhow};
+use indicatif::{ProgressBar, ProgressStyle};
+
 
 #[derive(Debug, PartialEq)]
 pub enum Dependency {
@@ -39,7 +42,10 @@ impl UV {
                 }
             }
         }
+        let pb = self.get_progress_bar();
+        pb.set_message("Resolving Dependencies...");
         let output = command.output()?;
+        pb.finish_with_message("Done");
         if output.status.success() {
             Ok(self.parse(&output.stdout))
         } else {
@@ -75,5 +81,24 @@ impl UV {
             }
         }
         dependencies
+    }
+
+    fn get_progress_bar(&self) -> ProgressBar {
+        let pb = ProgressBar::new_spinner();
+        pb.enable_steady_tick(Duration::from_millis(120));
+        pb.set_style(
+            ProgressStyle::with_template("{spinner:.yellow} {msg}")
+                .unwrap()
+                .tick_strings(&[
+                    "▹▹▹▹▹",
+                    "▸▹▹▹▹",
+                    "▹▸▹▹▹",
+                    "▹▹▸▹▹",
+                    "▹▹▹▸▹",
+                    "▹▹▹▹▸",
+                    "▪▪▪▪▪",
+                ]),
+        );
+        pb
     }
 }

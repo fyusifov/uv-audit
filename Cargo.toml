@@ -1,6 +1,6 @@
 [package]
 name = "uv-audit"
-version = "1.1.0"
+version = "1.2.0"
 edition = "2021"
 authors = ["Farid Yusifov"]
 
@@ -15,3 +15,4 @@ prettytable = "0.10.0"
 cyclonedx-bom = "0.6.2"
 uuid = "1.10.0"
 rand = "0.8.5"
+indicatif = "0.17.8"
