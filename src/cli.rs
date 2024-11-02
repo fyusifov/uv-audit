@@ -102,11 +102,9 @@ impl Config {
     ///
     /// This approach provides basic but effective text formatting without additional dependencies.
     pub fn validate_config(&self) {
-        if self.format == OutputFormatSelector::Columns {
-            if self.output.is_some() {
-                eprintln!("\x1b[1m\x1b[91merror:\x1b[0m the argument \x1b[93m'--format'\x1b[0m with value \x1b[93m'columns'\x1b[0m cannot be used with \x1b[93m'--output <OUTPUT>'\x1b[0m");
-                process::exit(1)
-            }
+        if self.format == OutputFormatSelector::Columns && self.output.is_some() {
+            eprintln!("\x1b[1m\x1b[91merror:\x1b[0m the argument \x1b[93m'--format'\x1b[0m with value \x1b[93m'columns'\x1b[0m cannot be used with \x1b[93m'--output <OUTPUT>'\x1b[0m");
+            process::exit(1)
         }
     }
 }

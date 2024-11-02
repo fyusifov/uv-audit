@@ -61,8 +61,8 @@ impl UV {
         Ok(self.parse(&content))
     }
 
-    fn parse(&self, output: &Vec<u8>) -> Vec<Dependency> {
-        let stdout = String::from_utf8_lossy(&output);
+    fn parse(&self, output: &[u8]) -> Vec<Dependency> {
+        let stdout = String::from_utf8_lossy(output);
         let mut dependencies = vec![];
         for line in stdout.lines() {
             if !line.contains("#") {

@@ -56,10 +56,7 @@ pub fn format_table(reports: &Vec<VulnerabilityReport>) {
 pub fn format_json(reports: &Vec<VulnerabilityReport>, mut output: Box<dyn Write>) {
     let mut vulnerable_dependencies = vec![];
     for report in reports {
-        match report {
-            VulnerabilityReport::Vulnerable { .. } => { vulnerable_dependencies.push(report) }
-            _ => ()
-        }
+        if let VulnerabilityReport::Vulnerable { .. } = report { vulnerable_dependencies.push(report) }
     }
 
     let serialized = serde_json::to_string(&vulnerable_dependencies)
@@ -78,42 +75,39 @@ pub fn format_cyclonedx(reports: &Vec<VulnerabilityReport>, mut output: Box<dyn 
         let bom_ref_part_1: u64 = rng.gen_range(1_000_000_000_000_000..10_000_000_000_000_000);
         let bom_ref_part_2: u64 = rng.gen_range(1_000_000_000_000_000..10_000_000_000_000_000);
         let bom_ref = format!("BomRef.{bom_ref_part_1}.{bom_ref_part_2}");
-        match report {
-            VulnerabilityReport::Vulnerable { name, version, vulnerabilities } => {
-                vulnerable_components.push(Component::new(
-                    Classification::Library,
-                    name,
-                    version,
-                    Some(bom_ref.clone())));
-                dependencies.push(Dependency { dependency_ref: bom_ref.clone(), dependencies: vec![] });
+        if let VulnerabilityReport::Vulnerable { name, version, vulnerabilities } = report {
+            vulnerable_components.push(Component::new(
+                Classification::Library,
+                name,
+                version,
+                Some(bom_ref.clone())));
+            dependencies.push(Dependency { dependency_ref: bom_ref.clone(), dependencies: vec![] });
 
-                for vuln in vulnerabilities {
-                    bom_vulnerabilities.push(BomVulnerability {
-                        bom_ref: Some(bom_ref.clone()),
-                        id: Some(NormalizedString::new(&vuln.id)),
-                        vulnerability_source: None,
-                        vulnerability_references: None,
-                        vulnerability_ratings: None,
-                        cwes: None,
-                        description: Some(vuln.details.clone()),
-                        detail: None,
-                        recommendation: Some("Upgrade".to_string()),
-                        workaround: None,
-                        proof_of_concept: None,
-                        advisories: None,
-                        created: None,
-                        published: None,
-                        updated: None,
-                        rejected: None,
-                        vulnerability_credits: None,
-                        tools: None,
-                        vulnerability_analysis: None,
-                        vulnerability_targets: None,
-                        properties: None,
-                    })
-                }
+            for vuln in vulnerabilities {
+                bom_vulnerabilities.push(BomVulnerability {
+                    bom_ref: Some(bom_ref.clone()),
+                    id: Some(NormalizedString::new(&vuln.id)),
+                    vulnerability_source: None,
+                    vulnerability_references: None,
+                    vulnerability_ratings: None,
+                    cwes: None,
+                    description: Some(vuln.details.clone()),
+                    detail: None,
+                    recommendation: Some("Upgrade".to_string()),
+                    workaround: None,
+                    proof_of_concept: None,
+                    advisories: None,
+                    created: None,
+                    published: None,
+                    updated: None,
+                    rejected: None,
+                    vulnerability_credits: None,
+                    tools: None,
+                    vulnerability_analysis: None,
+                    vulnerability_targets: None,
+                    properties: None,
+                })
             }
-            _ => ()
         }
     }
 
